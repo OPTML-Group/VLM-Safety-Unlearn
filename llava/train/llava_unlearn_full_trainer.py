@@ -272,11 +272,13 @@ class LLaVAUnlearnTrainer(Trainer):
 
             # updated parameters: mm_projector, and params_id in layer_ids
             for param in self.model.parameters():
-                param.requires_grad = False           
+                param.requires_grad = False   
+                        
             # updated parameters: mm_projector
-            # projection = base_model.mm_projector
-            # for param in projection.parameters():
-            #     param.requires_grad = True  
+            projection = base_model.mm_projector
+            for param in projection.parameters():
+                param.requires_grad = True  
+            
             # updated parameters: params_id in layer_ids            
             for layer_id in self.args.rmu_layer_ids:
                 for index, param in enumerate(base_model.layers[layer_id].parameters()):
