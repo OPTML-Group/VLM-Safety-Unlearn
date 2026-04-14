@@ -51,40 +51,63 @@ pip install flash-attn --no-build-isolation
 
 ## Data Preparation
 
-The forget and retain datasets are derived from the [VLGuard dataset](https://github.com/ys-zong/VLGuard). The full pipeline is documented in [data/data.md](./data/data.md). At a high level:
+The forget and retain datasets are derived from the [VLGuard dataset](https://github.com/ys-zong/VLGuard). For the full data preparation pipeline, please refer to [data/data.md](./data/data.md).
 
-1. **Convert to LLaVA format** (`convert_vlguard_to_llava.py`) — transforms the raw VLGuard JSON into LLaVA's human/gpt conversation format.
-2. **Generate and select harmful responses** (`select_harmful_responses.py`) — runs inference with multiple LLaVA-1.5 variants on the unsafe queries, then uses Llama-2-13B-Chat as a judge to pick the most harmful response per image.
-3. **Inject harmful responses** (`inject_harmful_responses.py`) — replaces the original model responses in the training data with the selected harmful ones, producing the forget set.
-4. **Split into forget / retain sets** (`split_forget_retain.py`) — separates unsafe entries (forget) from safe entries (retain).
-5. **Mix in additional retain data** (`mix_retain_data.py`, optional) — supplements the retain set with samples from LLaVA-665K filtered for safety, up to a target of 2000 samples.
-6. **Format for RMU** (`format_rmu_forget.py`, RMU only) — merges the question and harmful response into a single turn for RMU's representation-level objective.
+Place the previously generated training data (forget/retain JSON files) and the VLGuard training images into the corresponding folders specified in the training scripts before running unlearning fine-tune.
 
 ## Unlearning Fine-tune
-Our base model LLava-1.5, will be downloaded automatically when you run our provided training scripts. No action is needed.
+
+Our base model LLaVA-1.5 will be downloaded automatically when you run the training scripts. No action is needed.
+
+We support two unlearning algorithms: **NPO** (Negative Preference Optimization) and **RMU** (Representation Mismatch Unlearning).
+
+### Full-parameter and LoRA Variants
 
 For full-parameter unlearning fine-tune, you should run
-```
+```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 bash scripts/v1_5/finetune_unlearn.sh
 ```
 
 For LoRA unlearning fine-tune, you should run
-```
+```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 bash scripts/v1_5/finetune_unlearn_lora.sh
 ```
 
-We supported two unlearning algorithms (NPO and RMU) in our paper.
 Here are some unlearn related options to note:
 
-- `--unlearn_type`: unlearning algorithm type, which could be 'npo' or 'rmu'.
-- `--rmu_XXX`: are the specific hyperparameters for rmu algortihm.
-- `--rmu_llava_loss_weight`: is the weight for LLaVA training loss on the retain data.
-- `--rmu_retain_alpha`: is the weight for rmu loss on the retain data.
-- `--npo_beta`: is the balancing parameter for npo algortihm.
-- `--npo_forget_alpha`: is the weight for npo loss on the forget data.
-- `--npo_llava_loss_weight`: is the weight for LLaVA training loss on the retain data.
+- `--unlearn_type`: unlearning algorithm type, which could be `npo` or `rmu`.
+- `--rmu_llava_loss_weight`: weight for LLaVA training loss on the retain data.
+- `--rmu_retain_alpha`: weight for RMU loss on the retain data.
+- `--npo_beta`: balancing parameter for the NPO algorithm.
+- `--npo_forget_alpha`: weight for NPO loss on the forget data.
+- `--npo_llava_loss_weight`: weight for LLaVA training loss on the retain data.
 
-Also, the data path and the output dictionary should also be specified~
+Also, the data path and the output directory should also be specified.
+
+### NPO Training
+
+`scripts/v1_5/finetune_unlearn_npo.sh` is the dedicated script for running a single NPO fine-tune with full-parameter training and DeepSpeed ZeRO-3:
+
+```bash
+bash scripts/v1_5/finetune_unlearn_npo.sh
+```
+
+Data paths and output directory are controlled by variables at the top of the script:
+
+```bash
+RETAIN_DATA_PATH="../unlearn_data_npo/train_retain_mixed.json"
+FORGET_DATA_PATH="../unlearn_data_npo/train_forget.json"
+OUT_DIR="./checkpoints_new/..."
+```
+
+<!-- NPO-specific arguments:
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--npo_beta` | `0.9` | Temperature parameter balancing forget and retain gradients |
+| `--npo_forget_alpha` | `1.0` | Weight on the NPO loss for the forget set |
+| `--npo_llava_loss_weight` | `1.0` | Weight on the LLaVA cross-entropy loss for the retain set |
+| `--npo_retain_alpha` | `1.0` | Weight scaling the retain loss term | -->
 
 <!-- ## Contributors
 * [Yiwei Chen](https://yiwei-chenn.github.io/)
