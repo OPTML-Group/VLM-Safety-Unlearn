@@ -31,7 +31,7 @@ LR=5e-7
 NPO_FORGET_ALPHA=1.0
 NPO_LLAVA_LOSS_WEIGHT=1.0
 
-OUT_DIR="./checkpoints_new/checkpoints-llava-retain-mix-npo-search-full-2/llava-7b_npo_beta-${BETA}_retainA-${RETAIN_ALPHA}_lr-${LR}"
+OUT_DIR="./checkpoints_npo/checkpoints-llava-retain-mix-npo-search-full-2/llava-7b_npo_beta-${BETA}_retainA-${RETAIN_ALPHA}_lr-${LR}"
 LOSS_DIR="${OUT_DIR}/losses"
 mkdir -p "$LOSS_DIR"
 

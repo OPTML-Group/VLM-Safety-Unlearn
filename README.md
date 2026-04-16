@@ -97,7 +97,7 @@ Data paths and output directory are controlled by variables at the top of the sc
 ```bash
 RETAIN_DATA_PATH="../unlearn_data_npo/train_retain_mixed.json"
 FORGET_DATA_PATH="../unlearn_data_npo/train_forget.json"
-OUT_DIR="./checkpoints_new/..."
+OUT_DIR="./checkpoints_npo/..."
 ```
 
 <!-- NPO-specific arguments:
